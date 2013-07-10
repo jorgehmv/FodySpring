@@ -12,6 +12,5 @@ namespace AssemblyToProcess
     {
         public string InjectedString { get; set; }
     }
-
 }
 
