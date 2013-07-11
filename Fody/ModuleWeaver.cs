@@ -45,7 +45,7 @@ public class ModuleWeaver
             var ensureConfigurationMethod = GenerateEnsureConfigurationMethod(isConfiguredField);
             type.Methods.Add(ensureConfigurationMethod);
 
-            foreach (var ctor in type.GetConstructors())
+            foreach (var ctor in type.GetConstructors().Where(ctor => !ctor.IsStatic))
             {
                 var baseCtorCall = ctor.Body.Instructions.Single(i => IsCallToCtor(i));
                 var baseCtorCallIndex = ctor.Body.Instructions.IndexOf(baseCtorCall);
