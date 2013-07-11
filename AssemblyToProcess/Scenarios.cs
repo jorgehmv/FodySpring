@@ -67,5 +67,30 @@ namespace AssemblyToProcess
 
         public string InjectedString { get; set; }
     }
-}
 
+    [Configurable]
+    public static class ClassStatic
+    {
+        public static string InjectedString { get; set; }
+    }
+
+    [Configurable]
+    public class ClassBase
+    {
+        public string InjectedString { get; set; }
+    }
+
+    public class ClassNotConfigurableInheritingFromBase : ClassBase
+    {
+        public ClassNotConfigurableInheritingFromBase()
+        {
+            InjectedString += " appended from subclass";
+        }
+    }
+
+    [Configurable]
+    public class ClassConfigurableInheritingFromBase : ClassBase
+    {
+        public string InjectedStringSubclass { get; set; }
+    }
+}

@@ -78,6 +78,25 @@ public class WeaverTests
         Assert.AreEqual("injected string with spring appended text 1 appended text 2", instance.InjectedString);
     }
 
+    [Test]
+    public void ValidateSupportsClassNotConfigurableInheritingFromConfigurable()
+    {
+        var type = assembly.GetType("AssemblyToProcess.ClassNotConfigurableInheritingFromBase");
+        var instance = (dynamic)Activator.CreateInstance(type);
+
+        Assert.AreEqual("injected string with spring appended from subclass", instance.InjectedString);
+    }
+
+    [Test]
+    public void ValidateSupportsClassConfigurableInheritingFromConfigurable()
+    {
+        var type = assembly.GetType("AssemblyToProcess.ClassConfigurableInheritingFromBase");
+        var instance = (dynamic)Activator.CreateInstance(type);
+
+        Assert.AreEqual("injected string with spring", instance.InjectedString);
+        Assert.AreEqual("injected string to subclass with spring", instance.InjectedStringSubclass);
+    }
+
 #if(DEBUG)
     [Test]
     public void PeVerify()

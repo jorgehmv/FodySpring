@@ -38,11 +38,17 @@ public class ModuleWeaver
 
         foreach(var type in configurableTypes)
         {
+            if (type.IsSealed && type.IsAbstract)
+            {
+                LogInfo(string.Format("Type {0} is static and cannot be configurable. Skipping type", type));
+                continue;
+            }
+
             var isConfiguredField = new FieldDefinition("<>__isConfigured", 
                                                         Mono.Cecil.FieldAttributes.Private, 
                                                         ModuleDefinition.TypeSystem.Boolean);
             type.Fields.Add(isConfiguredField);
-            var ensureConfigurationMethod = GenerateEnsureConfigurationMethod(isConfiguredField);
+            var ensureConfigurationMethod = GenerateEnsureConfigurationMethod(isConfiguredField, type);
             type.Methods.Add(ensureConfigurationMethod);
 
             foreach (var ctor in type.GetConstructors().Where(ctor => !ctor.IsStatic))
@@ -56,18 +62,18 @@ public class ModuleWeaver
         }
     }
 
-    private MethodDefinition GenerateEnsureConfigurationMethod(FieldDefinition isConfiguredField)
+    private MethodDefinition GenerateEnsureConfigurationMethod(FieldDefinition isConfiguredField, TypeDefinition type)
     {
         var configureObjectMethod = ModuleDefinition.Import(typeof(ObjectConfigurator).GetMethod("ConfigureObject"));
         var exitMethod = Instruction.Create(OpCodes.Ret);
         var ensureConfigurationMethod = new MethodDefinition("<>__EnsureConfiguration",
-                                                             Mono.Cecil.MethodAttributes.Private,
+                                                             Mono.Cecil.MethodAttributes.Family | Mono.Cecil.MethodAttributes.Virtual,
                                                              ModuleDefinition.TypeSystem.Void);
         ensureConfigurationMethod.Body.SimplifyMacros();
 
         IfNotIsConfigured(isConfiguredField, exitMethod, ensureConfigurationMethod);
         IfNotAvoidConfigurationSetting(exitMethod, ensureConfigurationMethod);
-        ContextRegistryConfigureObject(ensureConfigurationMethod);
+        ContextRegistryConfigureObject(ensureConfigurationMethod, type);
         SetIsConfiguredToTrue(isConfiguredField, exitMethod, ensureConfigurationMethod);
 
         ensureConfigurationMethod.Body.OptimizeMacros();
@@ -105,17 +111,13 @@ public class ModuleWeaver
         ensureConfigurationMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Brtrue, exitMethod));
     }
 
-    private void ContextRegistryConfigureObject(MethodDefinition ensureConfigurationMethod)
+    private void ContextRegistryConfigureObject(MethodDefinition ensureConfigurationMethod, TypeDefinition type)
     {
-        // ContextRegistry.GetContext().ConfigureObject(objectToConfigure, objectToConfigure.GetType().Name);
+        // ContextRegistry.GetContext().ConfigureObject(objectToConfigure, "typeName");
         ensureConfigurationMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Call,
             ModuleDefinition.Import(typeof(ContextRegistry).GetMethod("GetContext", Type.EmptyTypes))));
         ensureConfigurationMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-        ensureConfigurationMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
-        ensureConfigurationMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt,
-            ModuleDefinition.Import(typeof(object).GetMethod("GetType"))));
-        ensureConfigurationMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt,
-            ModuleDefinition.Import(typeof(MemberInfo).GetMethod("get_Name"))));
+        ensureConfigurationMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ldstr, type.Name));
         ensureConfigurationMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt,
             ModuleDefinition.Import(typeof(IObjectFactory).GetMethod("ConfigureObject"))));
         ensureConfigurationMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Pop));

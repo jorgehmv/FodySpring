@@ -21,4 +21,13 @@
     <property name="InjectedString" value="injected string with spring" />
   </object>
 
+  <object name="ClassBase" singleton="false">
+    <property name="InjectedString" value="injected string with spring" />
+  </object>
+
+  <object name="ClassConfigurableInheritingFromBase" singleton="false">
+    <property name="InjectedString" value="injected string with spring" />
+    <property name="InjectedStringSubclass" value="injected string to subclass with spring" />
+  </object>
+
 </objects>
