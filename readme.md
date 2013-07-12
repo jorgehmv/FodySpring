@@ -95,3 +95,13 @@ The `Configurable` class above will be compiled as shown below:
 			}
 		}
 	}
+
+	
+### Why would I want this???
+Whether an entity should be injected with Services, Validators or other kind of objects is a long discussion with 
+different point of views.
+
+Being that said, if you choose to have your entities configured and do not want to pass this in every constructor call, 
+evenmore what if you don't have control on when an instance is created (i.e. an ORM is creating your entity) then this
+addin is for you.
+
